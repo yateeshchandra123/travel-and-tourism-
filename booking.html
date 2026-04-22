@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Book a Trip — Wanderlust</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<nav>
+  <a href="index.html" class="nav-logo">Wander<span>lust</span></a>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="index.html#destinations">Destinations</a>
+    <span class="user-name" id="userNameNav" style="color:var(--gold);font-size:14px"></span>
+    <button class="logout-btn" onclick="logout()" id="logoutBtn" style="display:none">Logout</button>
+    <a href="login.html" class="nav-btn" id="loginNavBtn">Login</a>
+  </div>
+</nav>
+
+<div class="booking-page">
+  <!-- Login required notice -->
+  <div id="loginNotice" style="display:none;max-width:600px;margin:0 auto;text-align:center;padding:80px 20px">
+    <div style="font-size:64px;margin-bottom:24px">🔐</div>
+    <div style="font-family:'Playfair Display',serif;font-size:32px;margin-bottom:16px">Login Required</div>
+    <p style="color:var(--text-muted);margin-bottom:32px">Please login to book your dream trip</p>
+    <a href="login.html" class="btn-primary">Login Now →</a>
+  </div>
+
+  <div id="bookingContent" style="display:none">
+    <div class="booking-layout">
+      <!-- Form -->
+      <div class="booking-card">
+        <div class="booking-title">Book Your Trip</div>
+        <div class="booking-sub">Fill in the details and we'll take care of the rest</div>
+
+        <div class="alert alert-error" id="errorAlert"></div>
+        <div class="alert alert-success" id="successAlert"></div>
+
+        <!-- Destination Selection -->
+        <div class="form-group">
+          <label class="form-label">Choose Destination</label>
+          <div class="dest-select-grid" id="destSelectGrid">
+            <div class="loading"><div class="spinner"></div></div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Travel Date</label>
+            <input type="date" class="form-input" id="travelDate">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Number of Persons</label>
+            <input type="number" class="form-input" id="numPersons" min="1" max="20" value="1" oninput="updateSummary()">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Special Requirements (Optional)</label>
+          <input type="text" class="form-input" id="notes" placeholder="Vegetarian meals, wheelchair access, etc.">
+        </div>
+
+        <button class="form-btn" id="bookBtn" onclick="submitBooking()">Confirm Booking →</button>
+      </div>
+
+      <!-- Summary -->
+      <div class="summary-card">
+        <div class="summary-title">Booking Summary</div>
+        <div class="summary-dest" id="summaryDest">
+          <div style="color:var(--text-muted);font-size:14px;text-align:center;width:100%">Select a destination to see summary</div>
+        </div>
+        <div id="summaryDetails" style="display:none">
+          <div class="summary-row"><span>Destination</span><span id="sumDestName">—</span></div>
+          <div class="summary-row"><span>Duration</span><span id="sumDuration">—</span></div>
+          <div class="summary-row"><span>Travel Date</span><span id="sumDate">—</span></div>
+          <div class="summary-row"><span>Persons</span><span id="sumPersons">—</span></div>
+          <div class="summary-row"><span>Price per person</span><span id="sumPricePerPerson">—</span></div>
+          <div class="summary-row total"><span>Total Amount</span><span id="sumTotal">—</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = 'http://localhost:3000/api';
+let destinations = [];
+let selectedDest = null;
+
+function showToast(msg, type='success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast ' + type; t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 3000);
+}
+function logout() { localStorage.removeItem('token'); localStorage.removeItem('user'); window.location.href = 'index.html'; }
+
+function checkAuth() {
+  const user = JSON.parse(localStorage.getItem('user') || 'null');
+  const token = localStorage.getItem('token');
+  if (!user || !token) { document.getElementById('loginNotice').style.display = 'block'; return false; }
+  document.getElementById('bookingContent').style.display = 'block';
+  document.getElementById('userNameNav').textContent = 'Hi, ' + user.name.split(' ')[0];
+  document.getElementById('logoutBtn').style.display = 'inline-block';
+  document.getElementById('loginNavBtn').style.display = 'none';
+  return true;
+}
+
+async function loadDestinations() {
+  try {
+    const res = await fetch(API + '/destinations');
+    const data = await res.json();
+    destinations = data.data || [];
+    const grid = document.getElementById('destSelectGrid');
+    grid.innerHTML = destinations.map(d => `
+      <div class="dest-option" id="destOpt${d.id}" onclick="selectDest(${d.id})">
+        <img src="${d.image_url}" alt="${d.name}" onerror="this.src='https://images.unsplash.com/photo-1488085061387-422e29b40080?w=400'">
+        <div class="dest-option-name">${d.name}</div>
+        <div class="dest-option-price">₹${Number(d.price).toLocaleString('en-IN')}/person</div>
+      </div>
+    `).join('');
+
+    // Pre-select from URL param
+    const params = new URLSearchParams(window.location.search);
+    const destId = params.get('dest');
+    if (destId) selectDest(parseInt(destId));
+  } catch(e) { document.getElementById('destSelectGrid').innerHTML = '<p style="color:var(--danger)">Could not load destinations.</p>'; }
+}
+
+function selectDest(id) {
+  document.querySelectorAll('.dest-option').forEach(el => el.classList.remove('selected'));
+  document.getElementById('destOpt'+id)?.classList.add('selected');
+  selectedDest = destinations.find(d => d.id === id);
+  updateSummary();
+}
+
+function updateSummary() {
+  if (!selectedDest) return;
+  const persons = parseInt(document.getElementById('numPersons').value) || 1;
+  const date = document.getElementById('travelDate').value;
+  const total = selectedDest.price * persons;
+
+  document.getElementById('summaryDest').innerHTML = `
+    <img src="${selectedDest.image_url}" alt="${selectedDest.name}" style="width:70px;height:55px;object-fit:cover;border-radius:8px" onerror="this.src='https://images.unsplash.com/photo-1488085061387-422e29b40080?w=200'">
+    <div><div class="summary-dest-name">${selectedDest.name}</div><div class="summary-dest-loc">📍 ${selectedDest.location}</div></div>`;
+  document.getElementById('summaryDetails').style.display = 'block';
+  document.getElementById('sumDestName').textContent = selectedDest.name;
+  document.getElementById('sumDuration').textContent = selectedDest.duration;
+  document.getElementById('sumDate').textContent = date ? new Date(date).toLocaleDateString('en-IN', {day:'numeric',month:'long',year:'numeric'}) : 'Not selected';
+  document.getElementById('sumPersons').textContent = persons;
+  document.getElementById('sumPricePerPerson').textContent = '₹' + Number(selectedDest.price).toLocaleString('en-IN');
+  document.getElementById('sumTotal').textContent = '₹' + total.toLocaleString('en-IN');
+}
+
+document.getElementById('travelDate')?.addEventListener('change', updateSummary);
+
+// Set min date to today
+const today = new Date().toISOString().split('T')[0];
+document.getElementById('travelDate').min = today;
+
+async function submitBooking() {
+  if (!selectedDest) return showToast('Please select a destination', 'error');
+  const travelDate = document.getElementById('travelDate').value;
+  const numPersons = parseInt(document.getElementById('numPersons').value);
+  if (!travelDate) return showToast('Please select a travel date', 'error');
+  if (!numPersons || numPersons < 1) return showToast('Please enter number of persons', 'error');
+
+  const btn = document.getElementById('bookBtn');
+  btn.disabled = true; btn.textContent = 'Processing...';
+
+  try {
+    const token = localStorage.getItem('token');
+    const total = selectedDest.price * numPersons;
+    const res = await fetch(API + '/booking', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body: JSON.stringify({ destination_id: selectedDest.id, travel_date: travelDate, num_persons: numPersons, total_price: total })
+    });
+    const data = await res.json();
+    if (data.success) {
+      document.getElementById('successAlert').textContent = `🎉 Booking confirmed! Your Booking ID: #${data.booking_id}`;
+      document.getElementById('successAlert').style.display = 'block';
+      document.getElementById('errorAlert').style.display = 'none';
+      showToast('Booking confirmed! 🎉', 'success');
+      btn.textContent = '✓ Booking Confirmed!';
+    } else {
+      document.getElementById('errorAlert').textContent = data.message;
+      document.getElementById('errorAlert').style.display = 'block';
+      btn.disabled = false; btn.textContent = 'Confirm Booking →';
+    }
+  } catch(e) {
+    showToast('Server error. Please try again.', 'error');
+    btn.disabled = false; btn.textContent = 'Confirm Booking →';
+  }
+}
+
+if (checkAuth()) loadDestinations();
+</script>
+</body>
+</html>

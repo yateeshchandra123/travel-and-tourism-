@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wanderlust — Travel & Tourism</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="index.html" class="nav-logo">Wander<span>lust</span></a>
+  <div class="nav-links" id="guestLinks">
+    <a href="#destinations">Destinations</a>
+    <a href="#why-us">Why Us</a>
+    <a href="booking.html">Book Now</a>
+    <a href="login.html" class="nav-btn">Login</a>
+  </div>
+  <div class="user-menu" id="userMenu">
+    <span class="user-name" id="userNameDisplay"></span>
+    <a href="booking.html" class="nav-btn" style="text-decoration:none">Book Trip</a>
+    <button class="logout-btn" onclick="logout()">Logout</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-orb"></div>
+  <div class="hero-content">
+    <div class="hero-badge">✦ Explore the World with Us</div>
+    <h1>Discover Your<span>Dream Destination</span></h1>
+    <p>Curated travel experiences across India's most breathtaking destinations. From serene beaches to majestic mountains.</p>
+    <div class="hero-btns">
+      <a href="#destinations" class="btn-primary">✦ Explore Destinations</a>
+      <a href="booking.html" class="btn-outline">Book a Trip</a>
+    </div>
+  </div>
+  <div class="scroll-hint">
+    <span>Scroll to explore</span>
+    <div class="scroll-line"></div>
+  </div>
+</section>
+
+<!-- STATS -->
+<div class="stats">
+  <div class="stats-grid">
+    <div><div class="stat-num">50+</div><div class="stat-label">Destinations</div></div>
+    <div><div class="stat-num">12k+</div><div class="stat-label">Happy Travellers</div></div>
+    <div><div class="stat-num">8+</div><div class="stat-label">Years Experience</div></div>
+    <div><div class="stat-num">4.9★</div><div class="stat-label">Average Rating</div></div>
+  </div>
+</div>
+
+<!-- DESTINATIONS -->
+<section class="section" id="destinations">
+  <div class="section-header">
+    <span class="section-tag">✦ Popular Picks</span>
+    <h2 class="section-title">Our <span>Top Destinations</span></h2>
+    <p class="section-sub">Handpicked locations offering the most unforgettable travel experiences.</p>
+  </div>
+  <div id="destinationsGrid">
+    <div class="loading"><div class="spinner"></div></div>
+  </div>
+</section>
+
+<!-- WHY US -->
+<section class="section features-bg" id="why-us">
+  <div class="section-header">
+    <span class="section-tag">✦ Why Wanderlust</span>
+    <h2 class="section-title">Travel with <span>Confidence</span></h2>
+  </div>
+  <div class="features-grid">
+    <div class="feature-card">
+      <span class="feature-icon">🛡️</span>
+      <div class="feature-title">Safe & Trusted</div>
+      <p class="feature-text">All our tours are carefully vetted with top safety standards and experienced guides.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">💰</span>
+      <div class="feature-title">Best Price Guarantee</div>
+      <p class="feature-text">We promise the best value for your money. Find lower? We'll match it.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">🎯</span>
+      <div class="feature-title">Personalised Tours</div>
+      <p class="feature-text">Every itinerary is curated to match your preferences, budget, and travel style.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">📞</span>
+      <div class="feature-title">24/7 Support</div>
+      <p class="feature-text">Our dedicated team is always available to assist you before, during and after your trip.</p>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-grid">
+    <div>
+      <div class="footer-brand">Wanderlust</div>
+      <p class="footer-text">Making travel dreams a reality since 2016. Your trusted partner for unforgettable journeys across India.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Destinations</h4>
+      <a href="#">Goa</a><a href="#">Kerala</a><a href="#">Rajasthan</a><a href="#">Himachal</a>
+    </div>
+    <div class="footer-col">
+      <h4>Company</h4>
+      <a href="#">About Us</a><a href="#">Careers</a><a href="#">Blog</a><a href="#">Contact</a>
+    </div>
+    <div class="footer-col">
+      <h4>Legal</h4>
+      <a href="#">Privacy Policy</a><a href="#">Terms</a><a href="#">Refund Policy</a>
+    </div>
+  </div>
+  <div class="footer-bottom">© 2024 Wanderlust Travel & Tourism. All rights reserved. | Minor Project</div>
+</footer>
+
+<!-- BOOKING MODAL -->
+<div class="modal-overlay" id="bookModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <img src="" alt="" class="modal-img" id="modalImg">
+    <div class="modal-title" id="modalTitle"></div>
+    <div class="modal-sub" id="modalSub"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+      <div style="font-family:'Playfair Display',serif;font-size:28px;color:var(--gold)" id="modalPrice"></div>
+      <div style="font-size:14px;color:var(--text-muted)" id="modalDuration"></div>
+    </div>
+    <a href="booking.html" class="btn-primary" style="width:100%;justify-content:center;text-decoration:none" id="modalBookBtn">Book This Trip →</a>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = 'http://localhost:3000/api';
+
+function checkAuth() {
+  const user = JSON.parse(localStorage.getItem('user') || 'null');
+  if (user) {
+    document.getElementById('guestLinks').style.display = 'none';
+    document.getElementById('userMenu').style.display = 'flex';
+    document.getElementById('userNameDisplay').textContent = 'Hi, ' + user.name.split(' ')[0];
+  }
+}
+
+function logout() {
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+  showToast('Logged out successfully', 'success');
+  setTimeout(() => location.reload(), 1000);
+}
+
+function showToast(msg, type='success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast ' + type;
+  t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 3000);
+}
+
+function openModal(dest) {
+  document.getElementById('modalImg').src = dest.image_url;
+  document.getElementById('modalTitle').textContent = dest.name;
+  document.getElementById('modalSub').textContent = dest.description;
+  document.getElementById('modalPrice').textContent = '₹' + Number(dest.price).toLocaleString('en-IN');
+  document.getElementById('modalDuration').textContent = dest.duration;
+  document.getElementById('modalBookBtn').href = 'booking.html?dest=' + dest.id;
+  document.getElementById('bookModal').style.display = 'flex';
+}
+
+function closeModal() { document.getElementById('bookModal').style.display = 'none'; }
+
+async function loadDestinations() {
+  try {
+    const res = await fetch(API + '/destinations');
+    const data = await res.json();
+    const grid = document.getElementById('destinationsGrid');
+    grid.className = 'destinations-grid';
+    if (!data.success || !data.data.length) { grid.innerHTML = '<p style="text-align:center;color:var(--text-muted)">No destinations found.</p>'; return; }
+    grid.innerHTML = data.data.map(d => `
+      <div class="dest-card">
+        <div class="dest-img">
+          <img src="${d.image_url}" alt="${d.name}" onerror="this.src='https://images.unsplash.com/photo-1488085061387-422e29b40080?w=800'">
+          <div class="dest-badge">${d.duration}</div>
+        </div>
+        <div class="dest-body">
+          <div class="dest-location">📍 ${d.location}</div>
+          <div class="dest-name">${d.name}</div>
+          <div class="dest-desc">${d.description}</div>
+          <div class="dest-footer">
+            <div class="dest-price">₹${Number(d.price).toLocaleString('en-IN')}<span>per person</span></div>
+            <div class="dest-rating"><span class="star">★</span>${d.rating}</div>
+          </div>
+          <button class="dest-btn" onclick='openModal(${JSON.stringify(d)})'>View Details & Book →</button>
+        </div>
+      </div>
+    `).join('');
+  } catch(e) {
+    document.getElementById('destinationsGrid').innerHTML = `<div style="text-align:center;color:var(--text-muted);padding:60px;grid-column:1/-1"><p style="font-size:32px">⚠️</p><p style="margin-top:12px">Cannot connect to server.<br>Make sure backend is running: <code style="color:var(--gold)">node backend/server.js</code></p></div>`;
+  }
+}
+
+checkAuth();
+loadDestinations();
+</script>
+</body>
+</html>

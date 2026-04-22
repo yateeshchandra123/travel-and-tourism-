@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register — Wanderlust</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<nav>
+  <a href="index.html" class="nav-logo">Wander<span>lust</span></a>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="login.html" class="nav-btn">Login</a>
+  </div>
+</nav>
+
+<div class="auth-page">
+  <div class="auth-box">
+    <div class="auth-logo"><a href="index.html">Wanderlust</a></div>
+    <div class="auth-title">Create Account</div>
+    <div class="auth-sub">Join thousands of happy travellers</div>
+
+    <div class="alert alert-error" id="errorAlert"></div>
+    <div class="alert alert-success" id="successAlert"></div>
+
+    <div class="form-group">
+      <label class="form-label">Full Name</label>
+      <input type="text" class="form-input" id="name" placeholder="Your full name">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Email Address</label>
+      <input type="email" class="form-input" id="email" placeholder="you@example.com">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Phone Number</label>
+      <input type="tel" class="form-input" id="phone" placeholder="+91 98765 43210">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Password</label>
+      <input type="password" class="form-input" id="password" placeholder="Minimum 6 characters">
+    </div>
+    <button class="form-btn" id="regBtn" onclick="doRegister()">Create Account →</button>
+    <div class="auth-switch">Already have an account? <a href="login.html">Sign in</a></div>
+  </div>
+</div>
+
+<script>
+const API = 'http://localhost:3000/api';
+function showError(msg) { const el = document.getElementById('errorAlert'); el.textContent = msg; el.style.display = 'block'; document.getElementById('successAlert').style.display = 'none'; }
+function showSuccess(msg) { const el = document.getElementById('successAlert'); el.textContent = msg; el.style.display = 'block'; document.getElementById('errorAlert').style.display = 'none'; }
+
+async function doRegister() {
+  const name = document.getElementById('name').value.trim();
+  const email = document.getElementById('email').value.trim();
+  const phone = document.getElementById('phone').value.trim();
+  const password = document.getElementById('password').value;
+  if (!name || !email || !password) return showError('Please fill in all required fields');
+  if (password.length < 6) return showError('Password must be at least 6 characters');
+  const btn = document.getElementById('regBtn');
+  btn.disabled = true; btn.textContent = 'Creating account...';
+  try {
+    const res = await fetch(API + '/auth/register', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({name, email, phone, password}) });
+    const data = await res.json();
+    if (data.success) { showSuccess('Account created! Redirecting to login...'); setTimeout(() => window.location.href = 'login.html', 1500); }
+    else { showError(data.message || 'Registration failed'); btn.disabled = false; btn.textContent = 'Create Account →'; }
+  } catch(e) { showError('Cannot connect to server.'); btn.disabled = false; btn.textContent = 'Create Account →'; }
+}
+</script>
+</body>
+</html>
